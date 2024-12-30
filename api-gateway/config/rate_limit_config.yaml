@@ -1,0 +1,5 @@
+API_KEYS:
+  "freemium-key-123":
+    max_rpm: 5
+  "premium-key-456":
+    max_rpm: 50

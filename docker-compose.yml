@@ -1,0 +1,60 @@
+services:
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    depends_on:
+      - auth-service
+      - model-service
+    environment:
+      - AUTH_SERVICE_URL=http://auth-service:5001
+      - MODEL_SERVICE_URL=http://model-service:5002
+    networks:
+      - app-network
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    networks:
+      - app-network
+
+  cache-service:
+    build:
+      context: ./cache-service
+      dockerfile: Dockerfile
+    ports:
+      - "5003:5003"
+    networks:
+      - app-network
+
+  log-service:
+    build:
+      context: ./log-service
+      dockerfile: Dockerfile
+    ports:
+      - "5009:5008"
+    volumes:
+      - ./log-service/logs:/app/logs
+    networks:
+      - app-network
+
+  model-service:
+    build:
+      context: ./model-service
+      dockerfile: Dockerfile
+    ports:
+      - "5002:5002"
+    depends_on:
+      - cache-service
+      - log-service
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
