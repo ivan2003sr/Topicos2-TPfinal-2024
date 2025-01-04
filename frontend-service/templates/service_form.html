@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servicio</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Enviar solicitud al servicio</h1>
+        {% with messages = get_flashed_messages(with_categories=True) %}
+          {% if messages %}
+            <ul>
+              {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+        <form method="POST" action="{{ url_for('service_form') }}">
+            <label for="api_key">API Key:</label>
+            <input type="text" id="api_key" name="api_key" placeholder="Tu API Key" required>
+
+            <label for="inputs">Entradas:</label>
+            <div id="input-fields">
+                <input type="text" name="inputs[]" placeholder="Entrada 1" required>
+            </div>
+            <button type="button" onclick="addInput()">Añadir más entradas</button>
+
+            <button type="submit">Enviar</button>
+        </form>
+    </div>
+    <script>
+        function addInput() {
+            const inputFields = document.getElementById("input-fields");
+            const input = document.createElement("input");
+            input.type = "text";
+            input.name = "inputs[]";
+            input.placeholder = `Entrada ${inputFields.children.length + 1}`;
+            input.required = true;
+            inputFields.appendChild(input);
+        }
+    </script>
+</body>
+</html>
