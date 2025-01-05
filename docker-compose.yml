@@ -1,3 +1,13 @@
+x-limits: &limits
+  deploy:
+    resources:
+      limits:
+        memory: 128m
+        cpus: "0.3"
+      reservations:
+        memory: 64m
+        cpus: "0.2"
+
 services:
   api-gateway:
     build:
@@ -11,6 +21,7 @@ services:
     environment:
       - AUTH_SERVICE_URL=http://auth-service:5001
       - MODEL_SERVICE_URL=http://model-service:5002
+    <<: *limits
     networks:
       - app-network
 
@@ -20,6 +31,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5001:5001"
+    <<: *limits
     networks:
       - app-network
 
@@ -29,6 +41,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5003:5003"
+    <<: *limits
     networks:
       - app-network
 
@@ -40,6 +53,7 @@ services:
       - "5009:5008"
     volumes:
       - ./log-service/logs:/app/logs
+    <<: *limits
     networks:
       - app-network
 
@@ -52,6 +66,19 @@ services:
     depends_on:
       - cache-service
       - log-service
+    <<: *limits
+    networks:
+      - app-network
+
+  frontend-service:
+    build:
+      context: ./frontend-service
+      dockerfile: Dockerfile
+    ports:
+      - "5010:5010"
+    environment:
+      - API_GATEWAY_URL=http://api-gateway:5000/service
+    <<: *limits
     networks:
       - app-network
 
