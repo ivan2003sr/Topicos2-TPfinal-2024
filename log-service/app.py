@@ -4,6 +4,7 @@ from datetime import datetime
 app = Flask(__name__)
 
 @app.route('/log', methods=['POST'])
+
 def log_event():
     # Recibir datos de registro
     data = request.json

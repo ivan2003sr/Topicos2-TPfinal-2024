@@ -63,10 +63,12 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5002:5002"
+    volumes:
+      - ./model-service/app:/app/app 
     depends_on:
       - cache-service
       - log-service
-    <<: *limits
+    #<<: *limits
     networks:
       - app-network
 

@@ -7,24 +7,89 @@ import numpy as np
 
 def create_app(test_config=None):
   app = Flask(__name__)
-  # app.run(host='0.0.0.0', port=5002, debug=True)
+  app.config['DEBUG'] = True
+
   try:
-    model = torch.load('model/trained_model.pkl', weights_only=False)
-    print("Modelo cargado correctamente.")
+    # Cargamos el modelo
+    model = torch.load('/app/app/model/trained_model.pkl', weights_only=False, map_location=torch.device('cpu'))
+    print("Modelo cargado correctamente y dataset de entrenamiento.")
+
+    # Cargamos el grafo de conocimiento que se entreno
+    triples_file = '/app/app/dataset/dataset_train.tsv.gz'
+    triples_factory = TriplesFactory.from_path(triples_file, create_inverse_triples=True)
+    df = pd.read_csv(triples_file, sep='\t', header=None, names=['head', 'relation', 'tail'])
+    print("Dataset de tripletas cargadas")
+
+
   except Exception as e:
     print(f"Error al cargar el modelo: {e}")
 
+  # Endpoint para obtener las 10 mejores entidades relacionadas por un ID de entidad
+  @app.route('/get_related_entities', methods=['POST'])
+  def get_related_entities():
 
-  # -----------------Este es un ejemplo de Simulación de procesamiento de un modelo------------------
-  @app.route('/process', methods=['POST'])
-  def process_model():
-    data = request.json
-    inputs = data.get("inputs", [])    
-    # Respuesta genérica
-    response = {
-        "probabilidad": 0.7  # Valor fijo simulado
-    }
-    return jsonify(response), 200
+    #try:
+      # Obtener datos del request
+      data = request.json
+      entity_id = data.get("entity_id")  # Obtener el ID de la entidad
+
+      print(f"Entity ID recibido: {entity_id}")
+      
+      # if entity_id is None:
+      #   print("Error: No se proporcionó entity_id")
+      #   return jsonify({"error": "No entity_id provided"}), 400
+      
+
+      # if entity_id not in triples_factory.entity_to_id.values():
+      #   print(f"Error: La entidad ID {entity_id} no encontrado en el grafo")
+      #   return jsonify({"error": "Entity ID not found"}), 404
+      heads = df[list(map(lambda x: True if ('pronto.owl#space_site' in x) and (len(x.split('#')[1].split('_')) == 3) else False, df['head'].values))]['head'].values
+      heads_idx = [triples_factory.entity_to_id[head] for head in heads]
+      
+      # entity_idx = triples_factory.entity_to_id[entity_id]
+      entity_idx = entity_id
+      print(f"ID de la entidad: {entity_idx}")
+
+      if entity_idx not in heads_idx:
+        return jsonify({"error": f"Entity ID '{entity_id}' does not match any unique entity"}), 404
+        
+     
+      relation_idx = triples_factory.relation_to_id['http://www.w3.org/2002/07/owl#sameAs']
+      
+      # Crear el tensor para la entidad proporcionada
+      sample = torch.tensor([[entity_idx, relation_idx]])
+      print(f"Procesando la entidad: {entity_id}")
+      
+      # Limpiar caché de CUDA (si aplica)
+      torch.cuda.empty_cache()
+      
+      # Obtener los scores del modelo
+      scores = model.score_t(sample)
+      print(f"Scores generados por el modelo: {scores}")
+      
+      # Obtener los 10 mejores
+      top_candidates = scores.topk(10, largest=False)
+      print(f"Top Candidates: {top_candidates}")
+      
+      top_values = top_candidates.values.tolist()
+      top_indices = top_candidates.indices.tolist()
+      print(f"Top Scores: {top_values}")
+      print(f"Top Indices: {top_indices}")
+      
+    
+      # Respuesta exitosa
+      response = {
+          "entity_id": entity_idx,
+          "top10_entities": top_indices,
+          "top10_scores": top_values,
+      }
+      return jsonify(response), 200
+
+    # except Exception as e:
+    #   # Capturar cualquier error
+    #   print(f"Error interno: {str(e)}")
+    #   return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+
 
 
   return app
