@@ -24,7 +24,7 @@ def service_form():
             flash("Por favor, ingresa un ID de entidad.", "error")
             return redirect(url_for("service_form"))
 
-        payload = {"entity_id": entity_id}
+        payload = {"entity_id": int(entity_id)}
         headers = {"Authorization": api_key, "Content-Type": "application/json"}
 
         try:
@@ -34,19 +34,18 @@ def service_form():
             return render_template("result.html", data=data)
 
         except requests.exceptions.HTTPError as http_err:
-            # Intentar obtener el cuerpo de la respuesta
             try:
-                error_data = response.json()  # Si el cuerpo es JSON
+                error_data = response.json()  
                 error_message = error_data.get("error", "Error desconocido del servicio")
             except ValueError:
-                error_message = response.text  # Si el cuerpo no es JSON
+                error_message = response.text  
 
             if response.status_code == 403:
                 error_message = "API Key inválida o no autorizada."
             elif response.status_code == 429:
                 error_message = "Has alcanzado el límite de solicitudes para tu API Key."
-            elif response.status_code == 400:
-                error_message = f"Error 400, solicitud errónea. Respuesta del servicio: {error_message}"
+            elif response.status_code == 404:
+                error_message = f"Error 404: {error_message}"
             else:
                 error_message = f"Error {response.status_code}: {response.reason}. Respuesta del servicio: {error_message}"
 

@@ -5,11 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resultado</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Resultado de la solicitud</h1>
-        <p><strong>{{ data }}</strong></p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Entity ID</th>
+                    <th>Top 10 Entities</th>
+                    <th>Top 10 Scores</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ data.entity_id }}</td>
+                    <td>
+                        <ul>
+                            {% for entity in data.top10_entities[0] %}
+                                <li>{{ entity }}</li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    <td>
+                        <ul>
+                            {% for score in data.top10_scores[0] %}
+                                <li>{{ score }}</li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
         <a href="{{ url_for('service_form') }}">Realizar otra solicitud</a>
     </div>
 </body>

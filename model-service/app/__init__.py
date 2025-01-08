@@ -51,7 +51,7 @@ def create_app(test_config=None):
       print(f"ID de la entidad: {entity_idx}")
 
       if entity_idx not in heads_idx:
-        return jsonify({"error": f"Entity ID '{entity_id}' does not match any unique entity"}), 400
+        return jsonify({"error": f"Entity ID '{entity_id}' does not match any unique entity"}), 404
         
      
       relation_idx = triples_factory.relation_to_id['http://www.w3.org/2002/07/owl#sameAs']
