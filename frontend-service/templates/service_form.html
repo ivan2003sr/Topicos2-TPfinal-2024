@@ -22,25 +22,10 @@
             <label for="api_key">API Key:</label>
             <input type="text" id="api_key" name="api_key" placeholder="Tu API Key" required>
 
-            <label for="inputs">Entradas:</label>
-            <div id="input-fields">
-                <input type="text" name="inputs[]" placeholder="Entrada 1" required>
-            </div>
-            <button type="button" onclick="addInput()">Añadir más entradas</button>
-
+            <label for="entity_id">Entrada a comparar:</label>
+            <input type="text" id="entity_id" name="entity_id" placeholder="Insertar ID" required>
             <button type="submit">Enviar</button>
         </form>
     </div>
-    <script>
-        function addInput() {
-            const inputFields = document.getElementById("input-fields");
-            const input = document.createElement("input");
-            input.type = "text";
-            input.name = "inputs[]";
-            input.placeholder = `Entrada ${inputFields.children.length + 1}`;
-            input.required = true;
-            inputFields.appendChild(input);
-        }
-    </script>
 </body>
 </html>

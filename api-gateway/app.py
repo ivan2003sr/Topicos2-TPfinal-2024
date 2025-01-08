@@ -37,11 +37,8 @@ def service():
     users_last_request[api_key] = current_time
     rate_limits[api_key] = rate_limits.get(api_key, 0) + 1
 
-    model_service_url = "http://model-service:5002/process"
+    model_service_url = "http://model-service:5002/get_related_entities"
     response = requests.post(model_service_url, json=request.json)
-    
-    if response.status_code != 200:
-        return jsonify({"error": "Error al procesar el modelo"}), response.status_code
     
     return jsonify(response.json()), response.status_code
 
