@@ -1,9 +1,9 @@
 {
-    "freemium-key-123": {
-      "type": "FREEMIUM"
-    },
-    "premium-key-456": {
-      "type": "PREMIUM"
-    }
+  "freemium-key": {
+    "type": "FREEMIUM"
+  },
+  "premium-key": {
+    "type": "PREMIUM"
   }
+}
   

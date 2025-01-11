@@ -12,50 +12,50 @@ def home():
 
 @app.route("/service", methods=["GET", "POST"])
 def service_form():
-    if request.method == "POST":
-        entity_id = request.form.get("entity_id")
-        api_key = request.form.get("api_key")
+  if request.method == "POST":
+    entity_id = request.form.get("entity_id")
+    api_key = request.form.get("api_key")
 
-        if not api_key:
-            flash("Por favor, ingresa tu API Key.", "error")
-            return redirect(url_for("service_form"))
+    if not api_key:
+      flash("Por favor, ingresa tu API Key.", "error")
+      return redirect(url_for("service_form"))
 
-        if not entity_id:
-            flash("Por favor, ingresa un ID de entidad.", "error")
-            return redirect(url_for("service_form"))
+    if not entity_id:
+      flash("Por favor, ingresa un ID de entidad.", "error")
+      return redirect(url_for("service_form"))
 
-        payload = {"entity_id": int(entity_id)}
-        headers = {"Authorization": api_key, "Content-Type": "application/json"}
+    payload = {"entity_id": int(entity_id)}
+    headers = {"Authorization": api_key, "Content-Type": "application/json"}
 
-        try:
-            response = requests.post(API_GATEWAY_URL, json=payload, headers=headers)
-            response.raise_for_status()  
-            data = response.json()
-            return render_template("result.html", data=data)
+    try:
+      response = requests.post(API_GATEWAY_URL, json=payload, headers=headers)
+      response.raise_for_status()  
+      data = response.json()
+      return render_template("result.html", data=data)
 
-        except requests.exceptions.HTTPError as http_err:
-            try:
-                error_data = response.json()  
-                error_message = error_data.get("error", "Error desconocido del servicio")
-            except ValueError:
-                error_message = response.text  
+    except requests.exceptions.HTTPError as http_err:
+      try:
+        error_data = response.json()  
+        error_message = error_data.get("error", "Error desconocido del servicio")
+      except ValueError:
+        error_message = response.text  
 
-            if response.status_code == 403:
-                error_message = "API Key inválida o no autorizada."
-            elif response.status_code == 429:
-                error_message = "Has alcanzado el límite de solicitudes para tu API Key."
-            elif response.status_code == 404:
-                error_message = f"Error 404: {error_message}"
-            else:
-                error_message = f"Error {response.status_code}: {response.reason}. Respuesta del servicio: {error_message}"
+      if response.status_code == 403:
+        error_message = "API Key inválida o no autorizada."
+      elif response.status_code == 429:
+        error_message = "Has alcanzado el límite de solicitudes para tu API Key."
+      elif response.status_code == 404:
+        error_message = f"Error 404: {error_message}"
+      else:
+        error_message = f"Error {response.status_code}: {response.reason}. Respuesta del servicio: {error_message}"
 
-            return render_template("error.html", error_message=error_message)
+      return render_template("error.html", error_message=error_message)
 
-        except Exception as err:
-            error_message = f"Ocurrió un error inesperado: {err}"
-            return render_template("error.html", error_message=error_message)
+    except Exception as err:
+      error_message = f"Ocurrió un error inesperado: {err}"
+      return render_template("error.html", error_message=error_message)
 
-    return render_template("service_form.html")
+  return render_template("service_form.html")
 
 @app.errorhandler(404)
 def page_not_found(e):
