@@ -66,7 +66,7 @@ def service():
     return jsonify(model_data), 200
 
   # Manejar errores del model-service
-  return jsonify({"error": "Error en model-service", "details": model_response.json()}), model_response.status_code
+  return jsonify(requests.post(model_service_url, json=request.json).json()), requests.post(model_service_url, json=request.json).status_code
 
 
 def log_to_service(log_entry):
