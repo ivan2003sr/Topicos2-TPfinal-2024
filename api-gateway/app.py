@@ -2,7 +2,8 @@ from flask import Flask, request, jsonify
 import requests
 import yaml
 import time
-import urllib.parse
+import pytz
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -14,6 +15,12 @@ users_last_request = {}
 
 cache_service_url = "http://cache-service:5003/cache"
 model_service_url = "http://model-service:5002/get_related_entities"
+LOG_SERVICE_URL = "http://log-service:5008/log"
+
+local_tz = pytz.timezone("America/Argentina/Buenos_Aires")
+
+def get_current_time():
+    return datetime.now(local_tz).strftime("%Y-%m-%d %H:%M:%S")
 
 @app.route("/service", methods=["POST"])
 def service():
@@ -60,6 +67,41 @@ def service():
 
   # Manejar errores del model-service
   return jsonify({"error": "Error en model-service", "details": model_response.json()}), model_response.status_code
+
+
+def log_to_service(log_entry):
+    """Enviar log al servicio de logging"""
+    try:
+        requests.post(LOG_SERVICE_URL, json={"log_entry": log_entry})
+    except Exception as e:
+        print(f"Error enviando log: {e}")
+
+@app.before_request
+def log_request():
+    log_entry = {
+        "timestamp": get_current_time(),
+        "service": "api-gateway",
+        "event": "request",
+        "method": request.method,
+        "url": request.url,
+        "headers": dict(request.headers),
+        "body": request.get_json(silent=True)
+    }
+    log_to_service(log_entry)
+
+@app.after_request
+def log_response(response):
+    log_entry = {
+        "timestamp": get_current_time(),
+        "service": "api-gateway",
+        "event": "response",
+        "status_code": response.status_code,
+        "response_headers": dict(response.headers),
+        "response_body": response.get_json(silent=True)
+    }
+    log_to_service(log_entry)
+    return response
+
 
 
 if __name__ == "__main__":

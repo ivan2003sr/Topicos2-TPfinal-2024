@@ -1,8 +1,10 @@
+import time
 from flask import Flask, request, jsonify
 import redis
 import json 
 import logging
-
+import pytz
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -45,6 +47,43 @@ def manage_cache():
     except Exception as e:
       return jsonify({"error": "Failed to set value in cache", "details": str(e)}), 500
     return jsonify({"key": key, "value": value, "ttl": ttl}), 201
+  
+  LOG_SERVICE_URL = "http://log-service:5008/log"
+local_tz = pytz.timezone("America/Argentina/Buenos_Aires")
+def get_current_time():
+    return datetime.now(local_tz).strftime("%Y-%m-%d %H:%M:%S")
+
+def log_to_service(log_entry):
+    try:
+        requests.post(LOG_SERVICE_URL, json={"log_entry": log_entry})
+    except Exception as e:
+        print(f"Error enviando log: {e}")
+
+@app.before_request
+def log_request():
+    log_entry = {
+        "timestamp": get_current_time(),
+        "service": "cache-service",
+        "event": "request",
+        "method": request.method,
+        "url": request.url,
+        "headers": dict(request.headers),
+        "body": request.get_json(silent=True)
+    }
+    log_to_service(log_entry)
+
+@app.after_request
+def log_response(response):
+    log_entry = {
+        "timestamp": get_current_time(),
+        "service": "cache-service",
+        "event": "response",
+        "status_code": response.status_code,
+        "response_headers": dict(response.headers),
+        "response_body": response.get_json(silent=True)
+    }
+    log_to_service(log_entry)
+    return response
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5003)

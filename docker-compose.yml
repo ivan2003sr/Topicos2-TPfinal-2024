@@ -13,14 +13,14 @@ services:
     build:
       context: ./api-gateway
       dockerfile: Dockerfile
-    ports:
-      - "5000:5000"
     depends_on:
       - auth-service
       - model-service
+      - log-service
     environment:
       - AUTH_SERVICE_URL=http://auth-service:5001
       - MODEL_SERVICE_URL=http://model-service:5002
+      - TZ=America/Argentina/Buenos_Aires
     <<: *limits
     networks:
       - app-network
@@ -29,8 +29,8 @@ services:
     build:
       context: ./auth-service
       dockerfile: Dockerfile
-    ports:
-      - "5001:5001"
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
     <<: *limits
     networks:
       - app-network
@@ -39,16 +39,18 @@ services:
     build:
       context: ./cache-service
       dockerfile: Dockerfile
-    ports:
-      - "5003:5003"
+    depends_on:
+      - log-service
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
     <<: *limits
     networks:
       - app-network
       
   redis:
     image: redis:6.2
-    ports:
-      - "6379:6379"
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
     networks:
       - app-network
 
@@ -56,11 +58,11 @@ services:
     build:
       context: ./log-service
       dockerfile: Dockerfile
-    ports:
-      - "5009:5008"
     volumes:
       - ./log-service/logs:/app/logs
     <<: *limits
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
     networks:
       - app-network
 
@@ -68,14 +70,15 @@ services:
     build:
       context: ./model-service
       dockerfile: Dockerfile
-    ports:
-      - "5002:5002"
+      args:
+        PIP_INSTALL_OPTIONS: "--timeout=120 --retries=3"
     volumes:
       - ./model-service/app:/app/app 
     depends_on:
       - cache-service
       - log-service
-    #<<: *limits
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
     networks:
       - app-network
 
@@ -87,6 +90,7 @@ services:
       - "5010:5010"
     environment:
       - API_GATEWAY_URL=http://api-gateway:5000/service
+      - TZ=America/Argentina/Buenos_Aires
     <<: *limits
     networks:
       - app-network

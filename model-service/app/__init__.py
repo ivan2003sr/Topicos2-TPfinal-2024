@@ -1,9 +1,12 @@
+import time
 from flask import abort, jsonify,Flask, request
 from pykeen.pipeline import pipeline
 from pykeen.triples import TriplesFactory
 import pandas as pd
 import torch
 import numpy as np
+import pytz
+from datetime import datetime
 
 def create_app(test_config=None):
   app = Flask(__name__)
@@ -23,6 +26,12 @@ def create_app(test_config=None):
 
   except Exception as e:
     print(f"Error al cargar el modelo: {e}")
+
+
+
+
+
+
 
   # Endpoint para obtener las 10 mejores entidades relacionadas por un ID de entidad
   @app.route('/get_related_entities', methods=['POST'])
@@ -90,9 +99,47 @@ def create_app(test_config=None):
     #   print(f"Error interno: {str(e)}")
     #   return jsonify({"error": f"Internal server error: {str(e)}"}), 500
 
-
+  
 
   return app
 
 app = create_app()
 
+LOG_SERVICE_URL = "http://log-service:5008/log"
+local_tz = pytz.timezone("America/Argentina/Buenos_Aires")
+
+def get_current_time():
+    return datetime.now(local_tz).strftime("%Y-%m-%d %H:%M:%S")
+
+def log_to_service(log_entry):
+    """Enviar log al servicio de logging"""
+    try:
+        requests.post(LOG_SERVICE_URL, json={"log_entry": log_entry})
+    except Exception as e:
+        print(f"Error enviando log: {e}")
+
+@app.before_request
+def log_request():
+    log_entry = {
+        "timestamp": get_current_time(),
+        "service": "model-service",
+        "event": "request",
+        "method": request.method,
+        "url": request.url,
+        "headers": dict(request.headers),
+        "body": request.get_json(silent=True)
+    }
+    log_to_service(log_entry)
+
+@app.after_request
+def log_response(response):
+    log_entry = {
+        "timestamp": get_current_time(),
+        "service": "model-service",
+        "event": "response",
+        "status_code": response.status_code,
+        "response_headers": dict(response.headers),
+        "response_body": response.get_json(silent=True)
+    }
+    log_to_service(log_entry)
+    return response
