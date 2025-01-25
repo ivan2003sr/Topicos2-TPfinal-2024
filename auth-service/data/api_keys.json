@@ -1,9 +1,10 @@
 {
   "freemium-key": {
-    "type": "FREEMIUM"
+    "type": "FREEMIUM",
+    "max_rpm": 5
   },
   "premium-key": {
-    "type": "PREMIUM"
+    "type": "PREMIUM",
+    "max_rpm": 50
   }
 }
-  
