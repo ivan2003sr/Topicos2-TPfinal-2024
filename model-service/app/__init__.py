@@ -23,21 +23,13 @@ def create_app(test_config=None):
     df = pd.read_csv(triples_file, sep='\t', header=None, names=['head', 'relation', 'tail'])
     print("Dataset de tripletas cargadas")
 
-
   except Exception as e:
     print(f"Error al cargar el modelo: {e}")
-
-
-
-
-
-
 
   # Endpoint para obtener las 10 mejores entidades relacionadas por un ID de entidad
   @app.route('/get_related_entities', methods=['POST'])
   def get_related_entities():
-
-    #try:
+    try:
       # Obtener datos del request
       data = request.json
       entity_id = data.get("entity_id")  # Obtener el ID de la entidad
@@ -48,10 +40,10 @@ def create_app(test_config=None):
       #   print("Error: No se proporcionó entity_id")
       #   return jsonify({"error": "No entity_id provided"}), 400
       
-
       # if entity_id not in triples_factory.entity_to_id.values():
       #   print(f"Error: La entidad ID {entity_id} no encontrado en el grafo")
       #   return jsonify({"error": "Entity ID not found"}), 404
+      
       heads = df[list(map(lambda x: True if ('pronto.owl#space_site' in x) and (len(x.split('#')[1].split('_')) == 3) else False, df['head'].values))]['head'].values
       heads_idx = [triples_factory.entity_to_id[head] for head in heads]
       
@@ -61,8 +53,8 @@ def create_app(test_config=None):
 
       if entity_idx not in heads_idx:
         return jsonify({"error": f"Entity ID '{entity_id}' does not match any unique entity"}), 404
-        
-     
+      
+
       relation_idx = triples_factory.relation_to_id['http://www.w3.org/2002/07/owl#sameAs']
       
       # Crear el tensor para la entidad proporcionada
@@ -88,18 +80,19 @@ def create_app(test_config=None):
     
       # Respuesta exitosa
       response = {
-          "entity_id": entity_idx,
-          "top10_entities": top_indices,
-          "top10_scores": top_values,
+        "entity_id": entity_idx,
+        #"description": description,
+        "top10_entities": top_indices,
+        "top10_scores": top_values,
       }
+      print(f"JSON: {response}")
       return jsonify(response), 200
 
-    # except Exception as e:
-    #   # Capturar cualquier error
-    #   print(f"Error interno: {str(e)}")
-    #   return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+    except Exception as e:
+      # Capturar cualquier error
+      print(f"Error interno: {str(e)}")
+      return jsonify({"error": f"Internal server error: {str(e)}"}), 500
 
-  
 
   return app
 
@@ -114,9 +107,9 @@ def get_current_time():
 def log_to_service(log_entry):
     """Enviar log al servicio de logging"""
     try:
-        requests.post(LOG_SERVICE_URL, json={"log_entry": log_entry})
+      requests.post(LOG_SERVICE_URL, json={"log_entry": log_entry})
     except Exception as e:
-        print(f"Error enviando log: {e}")
+      print(f"Error enviando log: {e}")
 
 @app.before_request
 def log_request():

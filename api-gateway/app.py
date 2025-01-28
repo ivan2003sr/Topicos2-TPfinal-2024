@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import requests
+import os
 import yaml
 import time
 import pytz
@@ -7,15 +8,17 @@ from datetime import datetime
 
 app = Flask(__name__)
 
+# Cargar configuración desde config/config.yaml
+config_path = os.path.join(os.path.dirname(__file__), "config", "config.yaml")
+with open(config_path, "r") as config_file:
+    config = yaml.safe_load(config_file)
 
-# URLs de servicios
-cache_service_url = "http://cache-service:5003/cache"
-model_service_url = "http://model-service:5002/get_related_entities"
-LOG_SERVICE_URL = "http://log-service:5008/log"
-auth_service_url = "http://auth-service:5001/validate"
-
-# Zona horaria local
-local_tz = pytz.timezone("America/Argentina/Buenos_Aires")
+# Acceso a las configuraciones
+cache_service_url = config["cache_service_url"]
+model_service_url = config["model_service_url"]
+log_service_url = config["log_service_url"]
+auth_service_url = config["auth_service_url"]
+local_tz = pytz.timezone(config["timezone"])
 
 def get_current_time():
     """Obtener la hora actual en formato local."""
@@ -41,6 +44,8 @@ def service():
         return jsonify({"error": "Rate limit exceeded"}), 429
 
     request_data = request.json
+    if not request_data:
+        return jsonify({"error": "Invalid input: 'inputs' field is required"}), 400
     cache_key = f"{api_key}:{str(request_data)}"  # Generar un key único para el request
 
     # Buscar en cache
@@ -50,8 +55,9 @@ def service():
         return jsonify(cached_data), 200
 
     # Si no está en cache, llamar al model-service y guardar en cache
-    model_response = requests.post(model_service_url, json=request_data)
-    if model_response.status_code == 200:
+    try:
+      model_response = requests.post(model_service_url, json=request_data)
+      if model_response.status_code == 200:
         model_data = model_response.json()
         cache_data = {
             "key": cache_key,
@@ -59,14 +65,17 @@ def service():
         }
         requests.post(cache_service_url, json=cache_data)
         return jsonify(model_data), 200
-
-    # Manejar errores del model-service
-    return jsonify(model_response.json()), model_response.status_code
+      # Manejar errores del model-service
+      else:
+        return jsonify({"error": "Model service error", "details": model_response.json()}), model_response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": "Model service connection error", "details": str(e)}), 503
+    # return jsonify(model_response.json()), model_response.status_code
 
 def log_to_service(log_entry):
     """Enviar log al servicio de logging."""
     try:
-        requests.post(LOG_SERVICE_URL, json={"log_entry": log_entry})
+        requests.post(log_service_url, json={"log_entry": log_entry})
     except Exception as e:
         print(f"Error enviando log: {e}")
 

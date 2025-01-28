@@ -1,0 +1,5 @@
+cache_service_url: "http://cache-service:5003/cache"
+model_service_url: "http://model-service:5002/get_related_entities"
+log_service_url: "http://log-service:5008/log"
+auth_service_url: "http://auth-service:5001/validate"
+timezone: "America/Argentina/Buenos_Aires"

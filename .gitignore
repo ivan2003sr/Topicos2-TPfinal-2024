@@ -1,1 +1,9 @@
+# Carpeta venv si es que se tiene 
 venv/
+
+# Logs específicos del servicio de logs
+log-service/logs/*.log
+
+# Caché específico del servicio de modelos
+model-service/app/__pycache__/
+
